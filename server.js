@@ -100,16 +100,16 @@ app.get('/', (req, res) => {
                 tr:hover { background: #dfdfdf; }
                 .name-history { font-size: 0.8em; color: #000000; display: block; margin-bottom: 4px; }
                 .current-name { font-weight: bold; color: #000000; }
-                input[type="text"] { background: #d4d4d4; border: 1px solid #c2c2c2; color: #fff; padding: 6px; border-radius: 4px; width: 90%; }
+                input[type="text"] { background: #e4e2e2; border: 1px solid #dfdfdf; color: #000000; padding: 6px; border-radius: 4px; width: 90%; }
                 .btn-save { background: #48f35f; color: #000; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
                 .btn-save:hover { background: #48f35f; }
-                .fc-cell { font-family: monospace; color: #000000; font-size: 2.0em; }
+                .fc-cell { font-family: monospace; color: #000000; font-size: 1.3em; }
             </style>
         </head>
         <body>
             <h1>プレイヤーログ一覧</h1>
             <div class="controls">
-                <span>作成者　Discord:@987lulu98</span>
+                <span>作成者　Discord: @omirais_. @987lulu98 </span>
             </div>
             <table>
                 <thead>
