@@ -1,20 +1,22 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const axios = require('axios');
+const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// メモリ内データベース（Renderが再起動するとリセットされます）
+// メモリ内データベース
 let playerDatabase = {};
 
+app.use(cors());
 app.use(bodyParser.json());
 
-// ヘルスチェックエンドポイント
+// ヘルスチェック
 app.get('/health', (req, res) => {
     res.status(200).send('OK');
 });
 
-// Renderのスリープ防止対策 (14分おきに自分自身を叩く)
+// Renderのスリープ防止対策
 const SELF_URL = process.env.RENDER_EXTERNAL_HOSTNAME 
     ? `https://${process.env.RENDER_EXTERNAL_HOSTNAME}/health` 
     : null;
@@ -40,22 +42,18 @@ app.post('/report', (req, res) => {
         const newName = p.name;
 
         if (playerDatabase[fc]) {
-            // 名前変更の検知
             if (playerDatabase[fc].currentName !== newName) {
-                // 以前の名前を履歴に追加（重複回避）
                 if (!playerDatabase[fc].history.includes(playerDatabase[fc].currentName)) {
                     playerDatabase[fc].history.push(playerDatabase[fc].currentName);
                 }
                 playerDatabase[fc].currentName = newName;
             }
         } else {
-            // 新規プレイヤー登録
             playerDatabase[fc] = {
                 fc: fc,
                 currentName: newName,
                 history: [],
-                memo: "",
-                firstSeen: new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })
+                memo: ""
             };
         }
     });
@@ -88,35 +86,55 @@ app.get('/', (req, res) => {
         <html lang="ja">
         <head>
             <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
             <title>Player Log Viewer</title>
             <style>
-                body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #ffffff; color: #ffffff; margin: 0; padding: 20px; }
-                h1 { color: #000000; border-bottom: 2px solid #ffffff; padding-bottom: 10px; }
-                .controls { margin-bottom: 20px; font-size: 1.1em; color: #000000; }
-                table { width: 100%; border-collapse: collapse; background: #fffefe; box-shadow: 0 4px 6px rgba(241, 241, 241, 0.98); }
-                th, td { padding: 12px; text-align: left; border-bottom: 1px solid #c2c2c2; }
-                th { background: #cecece; color: #000000; text-transform: uppercase; font-size: 0.85em; }
-                tr:hover { background: #dfdfdf; }
-                .name-history { font-size: 0.8em; color: #000000; display: block; margin-bottom: 4px; }
-                .current-name { font-weight: bold; color: #000000; }
-                input[type="text"] { background: #e4e2e2; border: 1px solid #dfdfdf; color: #000000; padding: 6px; border-radius: 4px; width: 90%; }
-                .btn-save { background: #48f35f; color: #000; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-                .btn-save:hover { background: #48f35f; }
-                .fc-cell { font-family: monospace; color: #000000; font-size: 1.3em; }
+                body { background: #121212; color: #eee; font-family: sans-serif; margin: 0; padding: 10px; }
+                h1 { font-size: 1.2rem; color: #bb86fc; margin-bottom: 10px; }
+                .controls { margin-bottom: 20px; font-size: 0.9em; color: #888; }
+                
+                /* PC向けテーブル表示 */
+                table { width: 100%; border-collapse: collapse; background: #1e1e1e; border-radius: 8px; overflow: hidden; }
+                th, td { padding: 12px; text-align: left; border-bottom: 1px solid #333; }
+                th { background: #333; color: #bb86fc; text-transform: uppercase; font-size: 0.85em; }
+                .name-history { font-size: 0.8em; color: #888; display: block; margin-bottom: 4px; }
+                .current-name { font-weight: bold; color: #03dac6; }
+                .fc-cell { font-family: monospace; color: #ffb74d; font-size: 1.1em; font-weight: bold; }
+                
+                input[type="text"] { background: #2c2c2c; border: 1px solid #444; color: #fff; padding: 8px; border-radius: 4px; width: 90%; }
+                .btn-save { background: #48f35f; color: #000; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+                
+                /* スマホ向けカード表示の定義 */
+                .player-card { 
+                    display: none;
+                    background: #1e1e1e; 
+                    border-radius: 8px; 
+                    padding: 12px; 
+                    margin-bottom: 10px; 
+                    border: 1px solid #333;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+                }
+
+                @media (max-width: 600px) {
+                    table { display: none; }
+                    .player-card { display: block; }
+                    .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+                    .card-memo { display: flex; gap: 8px; }
+                    .card-memo input { flex-grow: 1; }
+                }
             </style>
         </head>
         <body>
             <h1>プレイヤーログ一覧</h1>
             <div class="controls">
-                <span>作成者　Discord: @omirais_. @987lulu98 </span>
+                <span>作成者 Discord: @omirais_. @987lulu98 </span>
             </div>
-            <table>
+
+            <table id="pc-table">
                 <thead>
                     <tr>
                         <th>フレンドコード</th>
                         <th>名前</th>
-                        <th>初回確認</th>
                         <th>メモ</th>
                         <th>操作</th>
                     </tr>
@@ -124,46 +142,72 @@ app.get('/', (req, res) => {
                 <tbody id="player-table"></tbody>
             </table>
 
+            <div id="mobile-list"></div>
+
             <script>
                 async function fetchPlayers() {
                     try {
                         const res = await fetch('/players');
                         const players = await res.json();
-                        const tbody = document.getElementById('player-table');
                         
+                        // PCテーブル更新
+                        const tbody = document.getElementById('player-table');
                         tbody.innerHTML = players.map(p => {
                             const historyText = p.history.length > 0 
                                 ? \`<span class="name-history">\${p.history.join(' → ')} →</span>\` 
                                 : '';
-                            
                             return \`
                                 <tr>
                                     <td class="fc-cell">\${p.fc}</td>
-                                    <td>
-                                        \${historyText}
-                                        <span class="current-name">\${p.currentName}</span>
-                                    </td>
-                                    <td style="font-size:0.85em; color:#888;">\${p.firstSeen}</td>
+                                    <td>\${historyText}<span class="current-name">\${p.currentName}</span></td>
                                     <td><input type="text" id="memo-\${p.fc}" value="\${p.memo || ''}" placeholder="メモを入力..."></td>
                                     <td><button class="btn-save" onclick="saveMemo('\${p.fc}')">保存</button></td>
                                 </tr>
                             \`;
                         }).join('');
+
+                        // スマホカード更新
+                        const mobileList = document.getElementById('mobile-list');
+                        mobileList.innerHTML = players.map(p => {
+                            const historyText = p.history.length > 0 
+                                ? \`<span class="name-history">\${p.history.join(' → ')}</span>\` 
+                                : '';
+                            return \`
+                                <div class="player-card">
+                                    <div class="card-header">
+                                        <div class="fc-cell">\${p.fc}</div>
+                                        <div style="text-align: right;">
+                                            \${historyText}
+                                            <div class="current-name">\${p.currentName}</div>
+                                        </div>
+                                    </div>
+                                    <div class="card-memo">
+                                        <input type="text" id="m-memo-\${p.fc}" value="\${p.memo || ''}" placeholder="メモ...">
+                                        <button class="btn-save" onclick="saveMemo('\${p.fc}', true)">保存</button>
+                                    </div>
+                                </div>
+                            \`;
+                        }).join('');
+
                     } catch (e) { console.error("Update error:", e); }
                 }
 
-                async function saveMemo(fc) {
-                    const memo = document.getElementById('memo-' + fc).value;
+                async function saveMemo(fc, isMobile = false) {
+                    const inputId = isMobile ? 'm-memo-' + fc : 'memo-' + fc;
+                    const memo = document.getElementById(inputId).value;
                     const res = await fetch('/update-memo', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ fc, memo })
                     });
-                    if (res.ok) alert('メモを保存しました');
+                    if (res.ok) {
+                        alert('メモを保存しました');
+                        fetchPlayers();
+                    }
                 }
 
                 fetchPlayers();
-                setInterval(fetchPlayers, 10000);
+                setInterval(fetchPlayers, 15000);
             </script>
         </body>
         </html>
@@ -171,5 +215,5 @@ app.get('/', (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`Server is running on port \${PORT}`);
 });
