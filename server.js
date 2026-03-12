@@ -93,14 +93,14 @@ app.get('/', (req, res) => {
             <style>
                 body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #ffffff; color: #ffffff; margin: 0; padding: 20px; }
                 h1 { color: #000000; border-bottom: 2px solid #ffffff; padding-bottom: 10px; }
-                .controls { margin-bottom: 20px; font-size: 0.9em; color: #aaa; }
-                table { width: 100%; border-collapse: collapse; background: #fffefe; box-shadow: 0 4px 6px rgba(255, 255, 255, 0.3); }
-                th, td { padding: 12px; text-align: left; border-bottom: 1px solid #5a5a5a; }
-                th { background: #252525; color: #000000; text-transform: uppercase; font-size: 0.85em; }
-                tr:hover { background: #2a2a2a; }
+                .controls { margin-bottom: 20px; font-size: 0.9em; color: #c2c2c2; }
+                table { width: 100%; border-collapse: collapse; background: #fffefe; box-shadow: 0 4px 6px rgba(241, 241, 241, 0.98); }
+                th, td { padding: 12px; text-align: left; border-bottom: 1px solid #c2c2c2; }
+                th { background: #cecece; color: #000000; text-transform: uppercase; font-size: 0.85em; }
+                tr:hover { background: #dfdfdf; }
                 .name-history { font-size: 0.8em; color: #000000; display: block; margin-bottom: 4px; }
                 .current-name { font-weight: bold; color: #000000; }
-                input[type="text"] { background: #2c2c2c; border: 1px solid #444; color: #fff; padding: 6px; border-radius: 4px; width: 90%; }
+                input[type="text"] { background: #d4d4d4; border: 1px solid #c2c2c2; color: #fff; padding: 6px; border-radius: 4px; width: 90%; }
                 .btn-save { background: #119622; color: #000; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
                 .btn-save:hover { background: #119622; }
                 .fc-cell { font-family: monospace; color: #3058dd; font-size: 1.1em; }
