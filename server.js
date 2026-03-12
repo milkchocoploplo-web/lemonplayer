@@ -1,51 +1,175 @@
 const express = require('express');
-const https = require('https');
+const bodyParser = require('body-parser');
+const axios = require('axios');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(express.json());
+// メモリ内データベース（Renderが再起動するとリセットされます）
+let playerDatabase = {};
 
-// 簡易的なメモリ内データベース（再起動すると消えます。永続化が必要なら外部DBを使用してください）
-let playerHistory = [];
+app.use(bodyParser.json());
 
-// 1. プレイヤーデータ受信
-app.post('/api/report', (req, res) => {
-    const players = req.body.players;
-    const timestamp = new Date().toLocaleString('ja-JP');
-    
-    if (Array.isArray(players)) {
-        playerHistory.unshift({ timestamp, players });
-        // 履歴を最新50件に制限
-        if (playerHistory.length > 50) playerHistory.pop();
-        console.log(`[${timestamp}] プレイヤーリスト受信: ${players.length}人`);
-        res.json({ ok: true });
-    } else {
-        res.status(400).json({ ok: false, error: 'Invalid data' });
-    }
+// ヘルスチェックエンドポイント
+app.get('/health', (req, res) => {
+    res.status(200).send('OK');
 });
 
-// 2. 閲覧用ページ
-app.get('/', (req, res) => {
-    let html = `<h1>Player History</h1><p>Auto-refreshing every 30s</p><script>setTimeout(()=>location.reload(), 30000)</script>`;
-    playerHistory.forEach(entry => {
-        html += `<div style="border:1px solid #ccc; margin:10px; padding:10px;">
-                    <h3>${entry.timestamp}</h3><ul>`;
-        entry.players.forEach(p => {
-            html += `<li>[${p.slot}] <b>${p.nickname}</b> (HP: ${p.hp}) - ID: ${p.number}</li>`;
-        });
-        html += `</ul></div>`;
+// Renderのスリープ防止対策 (14分おきに自分自身を叩く)
+const SELF_URL = process.env.RENDER_EXTERNAL_HOSTNAME 
+    ? `https://${process.env.RENDER_EXTERNAL_HOSTNAME}/health` 
+    : null;
+
+setInterval(async () => {
+    if (SELF_URL) {
+        try {
+            await axios.get(SELF_URL);
+            console.log(`[HealthCheck] Pinging ${SELF_URL} - Success`);
+        } catch (err) {
+            console.error(`[HealthCheck] Failed: ${err.message}`);
+        }
+    }
+}, 14 * 60 * 1000); 
+
+// プレイヤーデータの報告を受信
+app.post('/report', (req, res) => {
+    const { players } = req.body;
+    if (!players || !Array.isArray(players)) return res.status(400).send('Invalid data');
+
+    players.forEach(p => {
+        const fc = String(p.fc);
+        const newName = p.name;
+
+        if (playerDatabase[fc]) {
+            // 名前変更の検知
+            if (playerDatabase[fc].currentName !== newName) {
+                // 以前の名前を履歴に追加（重複回避）
+                if (!playerDatabase[fc].history.includes(playerDatabase[fc].currentName)) {
+                    playerDatabase[fc].history.push(playerDatabase[fc].currentName);
+                }
+                playerDatabase[fc].currentName = newName;
+            }
+        } else {
+            // 新規プレイヤー登録
+            playerDatabase[fc] = {
+                fc: fc,
+                currentName: newName,
+                history: [],
+                memo: "",
+                firstSeen: new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })
+            };
+        }
     });
-    res.send(playerHistory.length ? html : "No data received yet.");
+
+    res.json({ success: true });
 });
 
-// 3. Renderのスリープ防止 (Self-Ping)
-setInterval(() => {
-    const url = `https://${process.env.RENDER_EXTERNAL_HOSTNAME}/`;
-    if (process.env.RENDER_EXTERNAL_HOSTNAME) {
-        https.get(url, (res) => {
-            console.log(`Keep-alive ping sent to ${url}: ${res.statusCode}`);
-        }).on('error', (e) => console.error("Ping error:", e));
+// メモの更新
+app.post('/update-memo', (req, res) => {
+    const { fc, memo } = req.body;
+    if (playerDatabase[fc]) {
+        playerDatabase[fc].memo = memo;
+        return res.json({ success: true });
     }
-}, 10 * 60 * 1000); // 10分おき
+    res.status(404).json({ error: 'Player not found' });
+});
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// プレイヤーリストの取得 (フレコ昇順)
+app.get('/players', (req, res) => {
+    const sortedList = Object.values(playerDatabase).sort((a, b) => {
+        return parseInt(a.fc) - parseInt(b.fc);
+    });
+    res.json(sortedList);
+});
+
+// フロントエンド画面
+app.get('/', (req, res) => {
+    res.send(`
+        <!DOCTYPE html>
+        <html lang="ja">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Player Log Viewer</title>
+            <style>
+                body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; color: #e0e0e0; margin: 0; padding: 20px; }
+                h1 { color: #bb86fc; border-bottom: 2px solid #333; padding-bottom: 10px; }
+                .controls { margin-bottom: 20px; font-size: 0.9em; color: #aaa; }
+                table { width: 100%; border-collapse: collapse; background: #1e1e1e; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+                th, td { padding: 12px; text-align: left; border-bottom: 1px solid #333; }
+                th { background: #252525; color: #bb86fc; text-transform: uppercase; font-size: 0.85em; }
+                tr:hover { background: #2a2a2a; }
+                .name-history { font-size: 0.8em; color: #888; display: block; margin-bottom: 4px; }
+                .current-name { font-weight: bold; color: #03dac6; }
+                input[type="text"] { background: #2c2c2c; border: 1px solid #444; color: #fff; padding: 6px; border-radius: 4px; width: 90%; }
+                .btn-save { background: #bb86fc; color: #000; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+                .btn-save:hover { background: #9965f4; }
+                .fc-cell { font-family: monospace; color: #ffb74d; font-size: 1.1em; }
+            </style>
+        </head>
+        <body>
+            <h1>プレイヤーログ一覧</h1>
+            <div class="controls">
+                <span>フレンドコード順に表示中 | 10秒毎に自動更新 | スリープ防止稼働中</span>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>フレンドコード</th>
+                        <th>名前 (履歴)</th>
+                        <th>初回確認</th>
+                        <th>メモ</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="player-table"></tbody>
+            </table>
+
+            <script>
+                async function fetchPlayers() {
+                    try {
+                        const res = await fetch('/players');
+                        const players = await res.json();
+                        const tbody = document.getElementById('player-table');
+                        
+                        tbody.innerHTML = players.map(p => {
+                            const historyText = p.history.length > 0 
+                                ? \`<span class="name-history">\${p.history.join(' → ')} →</span>\` 
+                                : '';
+                            
+                            return \`
+                                <tr>
+                                    <td class="fc-cell">\${p.fc}</td>
+                                    <td>
+                                        \${historyText}
+                                        <span class="current-name">\${p.currentName}</span>
+                                    </td>
+                                    <td style="font-size:0.85em; color:#888;">\${p.firstSeen}</td>
+                                    <td><input type="text" id="memo-\${p.fc}" value="\${p.memo || ''}" placeholder="メモを入力..."></td>
+                                    <td><button class="btn-save" onclick="saveMemo('\${p.fc}')">保存</button></td>
+                                </tr>
+                            \`;
+                        }).join('');
+                    } catch (e) { console.error("Update error:", e); }
+                }
+
+                async function saveMemo(fc) {
+                    const memo = document.getElementById('memo-' + fc).value;
+                    const res = await fetch('/update-memo', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ fc, memo })
+                    });
+                    if (res.ok) alert('メモを保存しました');
+                }
+
+                fetchPlayers();
+                setInterval(fetchPlayers, 10000);
+            </script>
+        </body>
+        </html>
+    `);
+});
+
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
