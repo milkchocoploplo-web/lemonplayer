@@ -100,30 +100,30 @@ app.get('/', (req, res) => {
             <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
             <title>Player Log Viewer</title>
             <style>
-                body { background: #121212; color: #eee; font-family: sans-serif; margin: 0; padding: 10px; }
-                h1 { font-size: 1.2rem; color: #bb86fc; margin-bottom: 10px; }
-                .controls { margin-bottom: 20px; font-size: 0.9em; color: #888; }
+                body { background: #ffffff; color: #ffffff; font-family: sans-serif; margin: 0; padding: 10px; }
+                h1 { font-size: 1.2rem; color: #000000; margin-bottom: 10px; }
+                .controls { margin-bottom: 20px; font-size: 0.9em; color: #d6d6d6; }
                 
                 /* PC向けテーブル表示 */
                 table { width: 100%; border-collapse: collapse; background: #1e1e1e; border-radius: 8px; overflow: hidden; }
-                th, td { padding: 12px; text-align: left; border-bottom: 1px solid #333; }
-                th { background: #333; color: #bb86fc; text-transform: uppercase; font-size: 0.85em; }
-                .name-history { font-size: 0.8em; color: #888; display: block; margin-bottom: 4px; }
-                .current-name { font-weight: bold; color: #03dac6; }
-                .fc-cell { font-family: monospace; color: #ffb74d; font-size: 1.1em; font-weight: bold; }
+                th, td { padding: 12px; text-align: left; border-bottom: 1px solid #dadada; }
+                th { background: #dddddd; color: #000000; text-transform: uppercase; font-size: 0.85em; }
+                .name-history { font-size: 0.8em; color: #5c5c5c; display: block; margin-bottom: 4px; }
+                .current-name { font-weight: bold; color: #000000; }
+                .fc-cell { font-family: monospace; color: #000000; font-size: 1.3em; font-weight: bold; }
                 
-                input[type="text"] { background: #2c2c2c; border: 1px solid #444; color: #fff; padding: 8px; border-radius: 4px; width: 90%; }
+                input[type="text"] { background: #c9c9c9; border: 1px solid #cecece; color: #fcfcfc; padding: 8px; border-radius: 4px; width: 90%; }
                 .btn-save { background: #48f35f; color: #000; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
                 
                 /* スマホ向けカード表示の定義 */
                 .player-card { 
                     display: none;
-                    background: #1e1e1e; 
+                    background: #ffffff; 
                     border-radius: 8px; 
                     padding: 12px; 
                     margin-bottom: 10px; 
-                    border: 1px solid #333;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+                    border: 1px solid #cfcfcf;
+                    box-shadow: 0 2px 4px rgb(255, 255, 255);
                 }
 
                 @media (max-width: 600px) {
