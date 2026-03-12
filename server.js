@@ -107,12 +107,12 @@ app.get('/', (req, res) => {
                 /* PC向けテーブル表示 */
                 table { width: 100%; border-collapse: collapse; background: #ffffff; border-radius: 8px; overflow: hidden; }
                 th, td { padding: 12px; text-align: left; border-bottom: 1px solid #dadada; }
-                th { background: #dddddd; color: #ffffff; text-transform: uppercase; font-size: 0.85em; }
+                th { background: #dddddd; color: #000000; text-transform: uppercase; font-size: 0.85em; }
                 .name-history { font-size: 0.8em; color: #5c5c5c; display: block; margin-bottom: 4px; }
                 .current-name { font-weight: bold; color: #000000; }
                 .fc-cell { font-family: monospace; color: #000000; font-size: 1.3em; font-weight: bold; }
                 
-                input[type="text"] { background: #c9c9c9; border: 1px solid #cecece; color: #fcfcfc; padding: 8px; border-radius: 4px; width: 90%; }
+                input[type="text"] { background: #e4e4e4; border: 1px solid #b1b1b1; color: #000000; padding: 8px; border-radius: 4px; width: 90%; }
                 .btn-save { background: #48f35f; color: #000; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
                 
                 /* スマホ向けカード表示の定義 */
