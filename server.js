@@ -91,19 +91,19 @@ app.get('/', (req, res) => {
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Player Log Viewer</title>
             <style>
-                body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; color: #e0e0e0; margin: 0; padding: 20px; }
-                h1 { color: #bb86fc; border-bottom: 2px solid #333; padding-bottom: 10px; }
+                body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #ffffff; color: #ffffff; margin: 0; padding: 20px; }
+                h1 { color: #000000; border-bottom: 2px solid #333; padding-bottom: 10px; }
                 .controls { margin-bottom: 20px; font-size: 0.9em; color: #aaa; }
-                table { width: 100%; border-collapse: collapse; background: #1e1e1e; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-                th, td { padding: 12px; text-align: left; border-bottom: 1px solid #333; }
-                th { background: #252525; color: #bb86fc; text-transform: uppercase; font-size: 0.85em; }
+                table { width: 100%; border-collapse: collapse; background: #fffefe; box-shadow: 0 4px 6px rgba(255, 255, 255, 0.3); }
+                th, td { padding: 12px; text-align: left; border-bottom: 1px solid #5a5a5a; }
+                th { background: #252525; color: #000000; text-transform: uppercase; font-size: 0.85em; }
                 tr:hover { background: #2a2a2a; }
-                .name-history { font-size: 0.8em; color: #888; display: block; margin-bottom: 4px; }
-                .current-name { font-weight: bold; color: #03dac6; }
+                .name-history { font-size: 0.8em; color: #000000; display: block; margin-bottom: 4px; }
+                .current-name { font-weight: bold; color: #000000; }
                 input[type="text"] { background: #2c2c2c; border: 1px solid #444; color: #fff; padding: 6px; border-radius: 4px; width: 90%; }
-                .btn-save { background: #bb86fc; color: #000; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-                .btn-save:hover { background: #9965f4; }
-                .fc-cell { font-family: monospace; color: #ffb74d; font-size: 1.1em; }
+                .btn-save { background: #119622; color: #000; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+                .btn-save:hover { background: #119622; }
+                .fc-cell { font-family: monospace; color: #3058dd; font-size: 1.1em; }
             </style>
         </head>
         <body>
