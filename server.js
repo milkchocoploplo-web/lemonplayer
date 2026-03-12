@@ -92,7 +92,7 @@ app.get('/', (req, res) => {
             <title>Player Log Viewer</title>
             <style>
                 body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #ffffff; color: #ffffff; margin: 0; padding: 20px; }
-                h1 { color: #000000; border-bottom: 2px solid #333; padding-bottom: 10px; }
+                h1 { color: #000000; border-bottom: 2px solid #ffffff; padding-bottom: 10px; }
                 .controls { margin-bottom: 20px; font-size: 0.9em; color: #aaa; }
                 table { width: 100%; border-collapse: collapse; background: #fffefe; box-shadow: 0 4px 6px rgba(255, 255, 255, 0.3); }
                 th, td { padding: 12px; text-align: left; border-bottom: 1px solid #5a5a5a; }
