@@ -93,7 +93,7 @@ app.get('/', (req, res) => {
             <style>
                 body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #ffffff; color: #ffffff; margin: 0; padding: 20px; }
                 h1 { color: #000000; border-bottom: 2px solid #ffffff; padding-bottom: 10px; }
-                .controls { margin-bottom: 20px; font-size: 0.9em; color: #c2c2c2; }
+                .controls { margin-bottom: 20px; font-size: 1.1em; color: #000000; }
                 table { width: 100%; border-collapse: collapse; background: #fffefe; box-shadow: 0 4px 6px rgba(241, 241, 241, 0.98); }
                 th, td { padding: 12px; text-align: left; border-bottom: 1px solid #c2c2c2; }
                 th { background: #cecece; color: #000000; text-transform: uppercase; font-size: 0.85em; }
@@ -101,21 +101,21 @@ app.get('/', (req, res) => {
                 .name-history { font-size: 0.8em; color: #000000; display: block; margin-bottom: 4px; }
                 .current-name { font-weight: bold; color: #000000; }
                 input[type="text"] { background: #d4d4d4; border: 1px solid #c2c2c2; color: #fff; padding: 6px; border-radius: 4px; width: 90%; }
-                .btn-save { background: #119622; color: #000; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-                .btn-save:hover { background: #119622; }
-                .fc-cell { font-family: monospace; color: #3058dd; font-size: 1.1em; }
+                .btn-save { background: #48f35f; color: #000; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+                .btn-save:hover { background: #48f35f; }
+                .fc-cell { font-family: monospace; color: #000000; font-size: 2.0em; }
             </style>
         </head>
         <body>
             <h1>プレイヤーログ一覧</h1>
             <div class="controls">
-                <span>フレンドコード順に表示中 | 10秒毎に自動更新 | スリープ防止稼働中</span>
+                <span>作成者　Discord:@987lulu98</span>
             </div>
             <table>
                 <thead>
                     <tr>
                         <th>フレンドコード</th>
-                        <th>名前 (履歴)</th>
+                        <th>名前</th>
                         <th>初回確認</th>
                         <th>メモ</th>
                         <th>操作</th>
