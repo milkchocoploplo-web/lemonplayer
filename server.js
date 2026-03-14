@@ -41,7 +41,7 @@ setInterval(async () => {
             console.error(`[HealthCheck] Failed: ${err.message}`);
         }
     }
-}, 10 * 60 * 1000); 
+}, 4 * 60 * 1000); 
 
 // プレイヤーデータの報告を受信
 app.post('/report', (req, res) => {
