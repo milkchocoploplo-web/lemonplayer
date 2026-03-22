@@ -246,7 +246,6 @@ app.get('/', (req, res) => {
                 }
 
                 fetchPlayers();
-                setInterval(fetchPlayers, 45000);
             </script>
         </body>
         </html>
