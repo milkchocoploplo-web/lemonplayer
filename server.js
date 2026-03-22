@@ -1,14 +1,14 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const axios = require('axios');
-// corsモジュールの依存を削除し、自前でヘッダーを設定します
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// メモリ内データベース
+// 【追加】削除用の管理者パスワード（環境変数または直接設定）
+const ADMIN_PASSWORD = "your_password_here"; 
+
 let playerDatabase = {};
 
-// CORSを自前で許可するミドルウェア（corsモジュール不要）
 app.use((req, res, next) => {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS");
@@ -19,15 +19,12 @@ app.use((req, res, next) => {
         next();
     }
 });
-
 app.use(bodyParser.json());
 
-// ヘルスチェック
 app.get('/health', (req, res) => {
     res.status(200).send('OK');
 });
 
-// Renderのスリープ防止対策
 const SELF_URL = process.env.RENDER_EXTERNAL_HOSTNAME 
     ? `https://${process.env.RENDER_EXTERNAL_HOSTNAME}/health` 
     : null;
@@ -41,9 +38,8 @@ setInterval(async () => {
             console.error(`[HealthCheck] Failed: ${err.message}`);
         }
     }
-}, 4 * 60 * 1000); 
+}, 4 * 60 * 1000);
 
-// プレイヤーデータの報告を受信
 app.post('/report', (req, res) => {
     const { players } = req.body;
     if (!players || !Array.isArray(players)) return res.status(400).send('Invalid data');
@@ -68,11 +64,9 @@ app.post('/report', (req, res) => {
             };
         }
     });
-
     res.json({ success: true });
 });
 
-// メモの更新
 app.post('/update-memo', (req, res) => {
     const { fc, memo } = req.body;
     if (playerDatabase[fc]) {
@@ -82,7 +76,21 @@ app.post('/update-memo', (req, res) => {
     res.status(404).json({ error: 'Player not found' });
 });
 
-// プレイヤーリストの取得 (フレコ昇順)
+// 【追加】プレイヤー削除エンドポイント
+app.post('/delete-player', (req, res) => {
+    const { fc, password } = req.body;
+    
+    if (password !== ADMIN_PASSWORD) {
+        return res.status(403).json({ error: 'パスワードが違います' });
+    }
+
+    if (playerDatabase[fc]) {
+        delete playerDatabase[fc];
+        return res.json({ success: true });
+    }
+    res.status(404).json({ error: 'Player not found' });
+});
+
 app.get('/players', (req, res) => {
     const sortedList = Object.values(playerDatabase).sort((a, b) => {
         return parseInt(a.fc) - parseInt(b.fc);
@@ -90,7 +98,6 @@ app.get('/players', (req, res) => {
     res.json(sortedList);
 });
 
-// フロントエンド画面
 app.get('/', (req, res) => {
     res.send(`
         <!DOCTYPE html>
@@ -100,38 +107,27 @@ app.get('/', (req, res) => {
             <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
             <title>Player Log Viewer</title>
             <style>
-                body { background: #ffffff; color: #ffffff; font-family: sans-serif; margin: 0; padding: 10px; }
+                body { background: #ffffff; color: #000000; font-family: sans-serif; margin: 0; padding: 10px; }
                 h1 { font-size: 1.2rem; color: #000000; margin-bottom: 10px; }
                 .controls { margin-bottom: 20px; font-size: 1.1em; color: #000000; }
-                
-                /* PC向けテーブル表示 */
                 table { width: 100%; border-collapse: collapse; background: #ffffff; border-radius: 8px; overflow: hidden; }
                 th, td { padding: 12px; text-align: left; border-bottom: 1px solid #dadada; }
                 th { background: #dddddd; color: #000000; text-transform: uppercase; font-size: 0.85em; }
                 .name-history { font-size: 0.8em; color: #5c5c5c; display: block; margin-bottom: 4px; }
                 .current-name { font-weight: bold; color: #000000; }
                 .fc-cell { font-family: monospace; color: #000000; font-size: 1.3em; font-weight: bold; }
-                
                 input[type="text"] { background: #e4e4e4; border: 1px solid #b1b1b1; color: #000000; padding: 8px; border-radius: 4px; width: 90%; }
-                .btn-save { background: #48f35f; color: #000; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+                .btn-save { background: #48f35f; color: #000; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 5px; }
+                /* 【追加】削除ボタンのスタイル */
+                .btn-delete { background: #ff4d4d; color: #fff; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
                 
-                /* スマホ向けカード表示の定義 */
-                .player-card { 
-                    display: none;
-                    background: #ffffff; 
-                    border-radius: 8px; 
-                    padding: 12px; 
-                    margin-bottom: 10px; 
-                    border: 1px solid #cfcfcf;
-                    box-shadow: 0 2px 4px rgb(255, 255, 255);
-                }
-
+                .player-card { display: none; background: #ffffff; border-radius: 8px; padding: 12px; margin-bottom: 10px; border: 1px solid #cfcfcf; }
                 @media (max-width: 600px) {
                     table { display: none; }
                     .player-card { display: block; }
                     .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
-                    .card-memo { display: flex; gap: 8px; }
-                    .card-memo input { flex-grow: 1; }
+                    .card-memo { display: flex; gap: 8px; flex-wrap: wrap; }
+                    .card-memo input { width: 100%; margin-bottom: 8px; }
                 }
             </style>
         </head>
@@ -161,45 +157,39 @@ app.get('/', (req, res) => {
                         const res = await fetch('/players');
                         const players = await res.json();
                         
-                        // PCテーブル更新
                         const tbody = document.getElementById('player-table');
                         tbody.innerHTML = players.map(p => {
-                            const historyText = p.history.length > 0 
-                                ? \`<span class="name-history">\${p.history.join(' → ')} →</span>\` 
-                                : '';
+                            const historyText = p.history.length > 0 ? \`<span class="name-history">\${p.history.join(' → ')} →</span>\` : '';
                             return \`
                                 <tr>
                                     <td class="fc-cell">\${p.fc}</td>
                                     <td>\${historyText}<span class="current-name">\${p.currentName}</span></td>
                                     <td><input type="text" id="memo-\${p.fc}" value="\${p.memo || ''}" placeholder="メモを入力..."></td>
-                                    <td><button class="btn-save" onclick="saveMemo('\${p.fc}')">保存</button></td>
+                                    <td>
+                                        <button class="btn-save" onclick="saveMemo('\${p.fc}')">保存</button>
+                                        <button class="btn-delete" onclick="deletePlayer('\${p.fc}')">削除</button>
+                                    </td>
                                 </tr>
                             \`;
                         }).join('');
 
-                        // スマホカード更新
                         const mobileList = document.getElementById('mobile-list');
                         mobileList.innerHTML = players.map(p => {
-                            const historyText = p.history.length > 0 
-                                ? \`<span class="name-history">\${p.history.join(' → ')}</span>\` 
-                                : '';
+                            const historyText = p.history.length > 0 ? \`<span class="name-history">\${p.history.join(' → ')}</span>\` : '';
                             return \`
                                 <div class="player-card">
                                     <div class="card-header">
                                         <div class="fc-cell">\${p.fc}</div>
-                                        <div style="text-align: right;">
-                                            \${historyText}
-                                            <div class="current-name">\${p.currentName}</div>
-                                        </div>
+                                        <div style="text-align: right;">\${historyText}<div class="current-name">\${p.currentName}</div></div>
                                     </div>
                                     <div class="card-memo">
                                         <input type="text" id="m-memo-\${p.fc}" value="\${p.memo || ''}" placeholder="メモ...">
                                         <button class="btn-save" onclick="saveMemo('\${p.fc}', true)">保存</button>
+                                        <button class="btn-delete" onclick="deletePlayer('\${p.fc}')">削除</button>
                                     </div>
                                 </div>
                             \`;
                         }).join('');
-
                     } catch (e) { console.error("Update error:", e); }
                 }
 
@@ -211,9 +201,26 @@ app.get('/', (req, res) => {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ fc, memo })
                     });
+                    if (res.ok) { alert('メモを保存しました'); fetchPlayers(); }
+                }
+
+                // 【追加】削除実行用スクリプト
+                async function deletePlayer(fc) {
+                    const password = prompt("削除するには管理パスワードを入力してください:");
+                    if (password === null) return; // キャンセル時
+
+                    const res = await fetch('/delete-player', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ fc, password })
+                    });
+
                     if (res.ok) {
-                        alert('メモを保存しました');
+                        alert('プレイヤーを削除しました');
                         fetchPlayers();
+                    } else {
+                        const err = await res.json();
+                        alert('エラー: ' + err.error);
                     }
                 }
 
@@ -226,5 +233,5 @@ app.get('/', (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`Server is running on port \${PORT}`);
+    console.log(`Server is running on port ${PORT}`);
 });
