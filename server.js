@@ -4,8 +4,8 @@ const axios = require('axios');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// 【追加】削除用の管理者パスワード（環境変数または直接設定）
-const ADMIN_PASSWORD = "your_password_here"; 
+// 管理者パスワード（編集・削除共通）
+const ADMIN_PASSWORD = "うんち123"; 
 
 let playerDatabase = {};
 
@@ -67,8 +67,12 @@ app.post('/report', (req, res) => {
     res.json({ success: true });
 });
 
+// 【修正】メモ更新時もパスワードをチェック
 app.post('/update-memo', (req, res) => {
-    const { fc, memo } = req.body;
+    const { fc, memo, password } = req.body;
+    if (password !== ADMIN_PASSWORD) {
+        return res.status(403).json({ error: 'パスワードが違いますおつかれｗＷ' });
+    }
     if (playerDatabase[fc]) {
         playerDatabase[fc].memo = memo;
         return res.json({ success: true });
@@ -76,14 +80,11 @@ app.post('/update-memo', (req, res) => {
     res.status(404).json({ error: 'Player not found' });
 });
 
-// 【追加】プレイヤー削除エンドポイント
 app.post('/delete-player', (req, res) => {
     const { fc, password } = req.body;
-    
     if (password !== ADMIN_PASSWORD) {
-        return res.status(403).json({ error: 'パスワードが違います' });
+        return res.status(403).json({ error: 'パスワードが違いますおつかれＷＷ' });
     }
-
     if (playerDatabase[fc]) {
         delete playerDatabase[fc];
         return res.json({ success: true });
@@ -109,7 +110,9 @@ app.get('/', (req, res) => {
             <style>
                 body { background: #ffffff; color: #000000; font-family: sans-serif; margin: 0; padding: 10px; }
                 h1 { font-size: 1.2rem; color: #000000; margin-bottom: 10px; }
-                .controls { margin-bottom: 20px; font-size: 1.1em; color: #000000; }
+                .controls { margin-bottom: 20px; font-size: 0.9em; color: #000000; padding: 10px; background: #f0f0f0; border-radius: 5px; }
+                .admin-input { margin-top: 8px; }
+                .admin-input input { padding: 5px; border-radius: 4px; border: 1px solid #ccc; width: 200px; }
                 table { width: 100%; border-collapse: collapse; background: #ffffff; border-radius: 8px; overflow: hidden; }
                 th, td { padding: 12px; text-align: left; border-bottom: 1px solid #dadada; }
                 th { background: #dddddd; color: #000000; text-transform: uppercase; font-size: 0.85em; }
@@ -118,7 +121,6 @@ app.get('/', (req, res) => {
                 .fc-cell { font-family: monospace; color: #000000; font-size: 1.3em; font-weight: bold; }
                 input[type="text"] { background: #e4e4e4; border: 1px solid #b1b1b1; color: #000000; padding: 8px; border-radius: 4px; width: 90%; }
                 .btn-save { background: #48f35f; color: #000; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 5px; }
-                /* 【追加】削除ボタンのスタイル */
                 .btn-delete { background: #ff4d4d; color: #fff; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
                 
                 .player-card { display: none; background: #ffffff; border-radius: 8px; padding: 12px; margin-bottom: 10px; border: 1px solid #cfcfcf; }
@@ -134,7 +136,10 @@ app.get('/', (req, res) => {
         <body>
             <h1>プレイヤーログ一覧</h1>
             <div class="controls">
-                <span>作成者 Discord: @omirais_. @987lulu98 </span>
+                <div>作成者 Discord: @omirais_. @987lulu98</div>
+                <div class="admin-input">
+                    編集用パスワード: <input type="password" id="admin-pass" placeholder="パスワードを入力">
+                </div>
             </div>
 
             <table id="pc-table">
@@ -152,6 +157,11 @@ app.get('/', (req, res) => {
             <div id="mobile-list"></div>
 
             <script>
+                // パスワード入力欄を取得
+                function getPassword() {
+                    return document.getElementById('admin-pass').value;
+                }
+
                 async function fetchPlayers() {
                     try {
                         const res = await fetch('/players');
@@ -194,20 +204,31 @@ app.get('/', (req, res) => {
                 }
 
                 async function saveMemo(fc, isMobile = false) {
+                    const password = getPassword();
+                    if(!password) { alert('パスワードを入力してください'); return; }
+
                     const inputId = isMobile ? 'm-memo-' + fc : 'memo-' + fc;
                     const memo = document.getElementById(inputId).value;
                     const res = await fetch('/update-memo', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ fc, memo })
+                        body: JSON.stringify({ fc, memo, password })
                     });
-                    if (res.ok) { alert('メモを保存しました'); fetchPlayers(); }
+                    
+                    if (res.ok) { 
+                        alert('メモを保存しました'); 
+                        fetchPlayers(); 
+                    } else {
+                        const err = await res.json();
+                        alert('エラー: ' + err.error);
+                    }
                 }
 
-                // 【追加】削除実行用スクリプト
                 async function deletePlayer(fc) {
-                    const password = prompt("削除するには管理パスワードを入力してください:");
-                    if (password === null) return; // キャンセル時
+                    const password = getPassword();
+                    if(!password) { alert('パスワードを入力してください'); return; }
+
+                    if(!confirm('本当に削除しますか？')) return;
 
                     const res = await fetch('/delete-player', {
                         method: 'POST',
@@ -225,7 +246,6 @@ app.get('/', (req, res) => {
                 }
 
                 fetchPlayers();
-                setInterval(fetchPlayers, 45000);
             </script>
         </body>
         </html>
