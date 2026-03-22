@@ -4,7 +4,6 @@ const axios = require('axios');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// 管理者パスワード（編集・削除共通）
 const ADMIN_PASSWORD = "うんち123"; 
 
 let playerDatabase = {};
@@ -136,9 +135,9 @@ app.get('/', (req, res) => {
         <body>
             <h1>プレイヤーログ一覧</h1>
             <div class="controls">
-                <div>作成者 Discord: @omirais_. @987lulu98</div>
+                <div>作成者 Discord: @omirais_.</div>
                 <div class="admin-input">
-                    編集用パスワード: <input type="password" id="admin-pass" placeholder="パスワードを入力">
+                    編集用パスワード: <input type="text" id="admin-pass" placeholder="パスワードを入力">
                 </div>
             </div>
 
