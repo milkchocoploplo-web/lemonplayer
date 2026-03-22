@@ -5,7 +5,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // 【追加】削除用の管理者パスワード（環境変数または直接設定）
-const ADMIN_PASSWORD = "your_password_here"; 
+const ADMIN_PASSWORD = "しね"; 
 
 let playerDatabase = {};
 
